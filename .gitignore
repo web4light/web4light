@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+# Private PJ / PJAY Web4 files (Hidden)
+*.pjay
+src/generated/*_pjay.pjay
+pj/
+private/

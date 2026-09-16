@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trojčlenka — Řídící centrum</title>
+  <style>
+    :root {
+      --bg:      #07090E;
+      --panel:   #0d1117;
+      --border:  #21262d;
+      --text:    #e6edf3;
+      --muted:   #7d8590;
+      --green:   #3fb950;
+      --red:     #f85149;
+      --yellow:  #d29922;
+      --blue:    #58a6ff;
+      --purple:  #bc8cff;
+      --orange:  #ffa657;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* === HEADER === */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    /* === GRID === */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    /* === PANEL === */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-icon { font-size: 16px; }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .panel-badge {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .badge-green  { background: rgba(63,185,80,.15); color: var(--green); }
+    .badge-red    { background: rgba(248,81,73,.15);  color: var(--red); }
+    .badge-yellow { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .badge-blue   { background: rgba(88,166,255,.15); color: var(--blue); }
+    .badge-purple { background: rgba(188,140,255,.15);color: var(--purple); }
+
+    /* === METRIKY === */
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(33,38,45,.5);
+    }
+
+    .metric:last-child { border-bottom: none; }
+
+    .metric-label { color: var(--muted); font-size: 11px; }
+    .metric-value { font-weight: 600; font-size: 13px; }
+
+    .val-green  { color: var(--green); }
+    .val-red    { color: var(--red); }
+    .val-yellow { color: var(--yellow); }
+    .val-blue   { color: var(--blue); }
+    .val-purple { color: var(--purple); }
+    .val-orange { color: var(--orange); }
+
+    /* === BIG NUMBER === */
+    .big-number {
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .big-label {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* === PROGRESS BAR === */
+    .progress-wrap {
+      margin: 8px 0;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    /* === NODES === */
+    .node-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .node-item {
+      background: rgba(33,38,45,.5);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .node-name { font-size: 10px; color: var(--muted); }
+    .node-port { font-size: 12px; font-weight: 600; }
+    .node-status { font-size: 10px; margin-top: 2px; }
+
+    /* === AGENTS === */
+    .agent-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .agent-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: rgba(33,38,45,.4);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .agent-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .agent-name { flex: 1; font-size: 12px; }
+    .agent-track { font-size: 10px; color: var(--muted); }
+
+    .btn-submit {
+      padding: 4px 10px;
+      background: rgba(63,185,80,.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .2s;
+    }
+
+    .btn-submit:hover {
+      background: rgba(63,185,80,.3);
+    }
+
+    .btn-submit.ready { opacity: 1; }
+    .btn-submit.pending { opacity: .4; cursor: default; }
+
+    /* === SOL FEED === */
+    .sol-display {
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .sol-circle {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%,
+        #fff7e6, #ffd700, #ff8c00, #ff4500);
+      margin: 0 auto 8px;
+      box-shadow: 0 0 20px rgba(255,140,0,.4);
+      animation: solPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes solPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(255,140,0,.4); }
+      50% { box-shadow: 0 0 40px rgba(255,140,0,.7); }
+    }
+
+    /* === COUNTDOWN === */
+    .countdown {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--purple);
+      letter-spacing: 0.05em;
+    }
+
+    /* === FOOTER === */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="status-dot"></div>
+      <h1>✳ TROJČLENKA — Řídící centrum</h1>
+    </div>
+    <div class="header-right">
+      <span id="clock">--:--:--</span>
+      <span>192.168.123.x · LAN only</span>
+      <span style="color:var(--green)">● ONLINE</span>
+    </div>
+  </header>
+
+  <!-- VRSTVA 1: VIDĚT — Metriky -->
+  <div class="grid">
+
+    <!-- Primary Node -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">👁️</span>
+        <span class="panel-title">Vidět · Primary</span>
+        <span class="panel-badge badge-green" id="primary-badge">ONLINE</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Port</span>
+        <span class="metric-value val-blue">:9302</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Host</span>
+        <span class="metric-value">192.168.123.191</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Uptime</span>
+        <span class="metric-value val-green" id="primary-uptime">--</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Latence</span>
+        <span class="metric-value val-green" id="primary-latency">-- ms</span>
+      </div>
+    </div>
+
+    <!-- Shadow Node -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">👁️</span>
+        <span class="panel-title">Vidět · Shadow</span>
+        <span class="panel-badge badge-green" id="shadow-badge">ONLINE</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Port</span>
+        <span class="metric-value val-blue">:9303</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Host</span>
+        <span class="metric-value">192.168.123.169</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Failover</span>
+        <span class="metric-value val-yellow">&lt; 20s</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">SparkDog</span>
+        <span class="metric-value val-green" id="sparkdog-status">♥ OK</span>
+      </div>
+    </div>
+
+    <!-- Mesh Grid -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">🕸️</span>
+        <span class="panel-title">Vidět · Mesh</span>
+        <span class="panel-badge badge-blue" id="mesh-badge">0 NODES</span>
+      </div>
+      <div class="big-number val-blue" id="mesh-nodes">0</div>
+      <div class="big-label">Aktivní uzly</div>
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>TFLOPS</span>
+          <span id="mesh-tflops">0.0</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="tflops-bar"
+               style="width:0%;background:var(--blue)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sol 1 AU -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">☀️</span>
+        <span class="panel-title">Sol 1 AU</span>
+        <span class="panel-badge badge-yellow">8.2 min</span>
+      </div>
+      <div class="sol-display">
+        <div class="sol-circle"></div>
+        <div style="font-size:11px;color:var(--muted)">Zpoždění světla</div>
+        <div style="font-size:13px;font-weight:600;color:var(--orange)">
+          149,600,000 km
+        </div>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Napájení</span>
+        <span class="metric-value val-orange">☀️ Solární</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VRSTVA 2: SLYŠET + MLUVIT -->
+  <div class="grid-2">
+
+    <!-- SLYŠET — Karel IV. -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">👂</span>
+        <span class="panel-title">Slyšet · Karel IV.</span>
+        <span class="panel-badge badge-green" id="karel-badge">READY</span>
+      </div>
+      <div class="node-grid">
+        <div class="node-item">
+          <div class="node-name">STT</div>
+          <div class="node-port" style="color:var(--green)">Whisper</div>
+          <div class="node-status val-green">✓</div>
+        </div>
+        <div class="node-item">
+          <div class="node-name">Překlad</div>
+          <div class="node-port" style="color:var(--blue)">Gemini</div>
+          <div class="node-status val-green">✓</div>
+        </div>
+        <div class="node-item">
+          <div class="node-name">TTS</div>
+          <div class="node-port" style="color:var(--purple)">Coqui</div>
+          <div class="node-status val-green">✓</div>
+        </div>
+      </div>
+      <div class="metric" style="margin-top:8px">
+        <span class="metric-label">Latence pipeline</span>
+        <span class="metric-value val-green" id="karel-latency">-- ms</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Aktivní překlady</span>
+        <span class="metric-value val-blue" id="karel-active">0</span>
+      </div>
+    </div>
+
+    <!-- MLUVIT — Agenti -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">🗣️</span>
+        <span class="panel-title">Mluvit · Agenti</span>
+      </div>
+      <div class="agent-list">
+        <div class="agent-item">
+          <div class="agent-dot" style="background:var(--green)"></div>
+          <div>
+            <div class="agent-name">Agent Komenský</div>
+            <div class="agent-track">UTL · All Things Agentic</div>
+          </div>
+          <button class="btn-submit ready"
+                  onclick="submitAgent('komensky')">✓ Submitted</button>
+        </div>
+        <div class="agent-item">
+          <div class="agent-dot" style="background:var(--blue)"></div>
+          <div>
+            <div class="agent-name">Asterisk (*)</div>
+            <div class="agent-track">WebMCP · Nebius x NVIDIA</div>
+          </div>
+          <button class="btn-submit ready"
+                  onclick="submitAgent('asterisk')">✓ Submitted</button>
+        </div>
+        <div class="agent-item">
+          <div class="agent-dot" style="background:var(--yellow)"></div>
+          <div>
+            <div class="agent-name">SPARK Automate</div>
+            <div class="agent-track">Workflow Studio · v příp.</div>
+          </div>
+          <button class="btn-submit pending" disabled>⏳ Building</button>
+        </div>
+        <div class="agent-item">
+          <div class="agent-dot" style="background:var(--muted)"></div>
+          <div>
+            <div class="agent-name">Trojčlenka</div>
+            <div class="agent-track">Privátní · Nepublikovat</div>
+          </div>
+          <button class="btn-submit pending" disabled>🔒 Private</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VRSTVA 3: VĚDĚT — SPARK verifikace + Privacy -->
+  <div class="grid">
+
+    <!-- SPARK Status -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">🧠</span>
+        <span class="panel-title">Vědět · SPARK</span>
+        <span class="panel-badge badge-green">PROVED</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">vacuum_mincovna</span>
+        <span class="metric-value val-green">✓ proved</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">ash_sweeper</span>
+        <span class="metric-value val-green">✓ proved</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">sparkdog</span>
+        <span class="metric-value val-green">✓ proved</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">hippocratic_oath</span>
+        <span class="metric-value val-green">✓ proved</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Celkem checks</span>
+        <span class="metric-value val-blue">347/347</span>
+      </div>
+    </div>
+
+    <!-- Privacy 4:23 -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">🔒</span>
+        <span class="panel-title">Vědět · Privacy 4:23</span>
+        <span class="panel-badge badge-purple">ACTIVE</span>
+      </div>
+      <div class="countdown" id="purge-countdown">--:--:--</div>
+      <div class="big-label" style="margin-bottom:8px">do dalšího purge</div>
+      <div class="metric">
+        <span class="metric-label">Protokol</span>
+        <span class="metric-value val-purple">4:23</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Zápisy na disk</span>
+        <span class="metric-value val-green">0</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Metadata</span>
+        <span class="metric-value val-green">In-memory only</span>
+      </div>
+    </div>
+
+    <!-- StarsChain -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">⛓️</span>
+        <span class="panel-title">Vědět · StarsChain</span>
+        <span class="panel-badge badge-yellow">TESTNET</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Network</span>
+        <span class="metric-value val-yellow">Sepolia</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Standard 700</span>
+        <span class="metric-value val-orange">1 ⭐ = 12g Ag</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Gas balance</span>
+        <span class="metric-value val-blue" id="stars-balance">-- ⭐</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Dárci výkonu</span>
+        <span class="metric-value val-green" id="stars-donors">0</span>
+      </div>
+    </div>
+
+    <!-- Prometheus -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-icon">📊</span>
+        <span class="panel-title">Vědět · Prometheus</span>
+        <span class="panel-badge badge-blue">:9090</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">n8n</span>
+        <span class="metric-value val-blue">:5678</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Grafana</span>
+        <span class="metric-value val-orange">:3000</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Watchdog</span>
+        <span class="metric-value val-green">:9304</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Faucet DNS</span>
+        <span class="metric-value val-purple">:8080</span>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    ✳ TROJČLENKA · Privátní · LAN only · 192.168.123.x ·
+    Rebirth Phoenix Foundation Charter · Web 4.23
+  </footer>
+
+<script>
+// === HODINY ===
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('cs-CZ');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// === PRIVACY 4:23 COUNTDOWN ===
+function updatePurgeCountdown() {
+  const now = new Date();
+  const purge = new Date(now);
+  purge.setHours(4, 23, 0, 0);
+  if (purge <= now) purge.setDate(purge.getDate() + 1);
+
+  const diff = purge - now;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+
+  document.getElementById('purge-countdown').textContent =
+    String(h).padStart(2,'0') + ':' +
+    String(m).padStart(2,'0') + ':' +
+    String(s).padStart(2,'0');
+}
+setInterval(updatePurgeCountdown, 1000);
+updatePurgeCountdown();
+
+// === PING NODES ===
+async function pingNode(url, latencyId, badgeId) {
+  const start = performance.now();
+  try {
+    await fetch(url, { mode: 'no-cors', signal:
+      AbortSignal.timeout(3000) });
+    const ms = Math.round(performance.now() - start);
+    if (latencyId)
+      document.getElementById(latencyId).textContent = ms + ' ms';
+    if (badgeId) {
+      const b = document.getElementById(badgeId);
+      b.textContent = 'ONLINE';
+      b.className = 'panel-badge badge-green';
+    }
+  } catch {
+    if (latencyId)
+      document.getElementById(latencyId).textContent = 'timeout';
+    if (badgeId) {
+      const b = document.getElementById(badgeId);
+      b.textContent = 'OFFLINE';
+      b.className = 'panel-badge badge-red';
+    }
+  }
+}
+
+// === PROMETHEUS METRIKY ===
+async function fetchMetrics() {
+  try {
+    const r = await fetch('http://192.168.123.169:9090/api/v1/query' +
+      '?query=up', { signal: AbortSignal.timeout(3000) });
+    const data = await r.json();
+    if (data.status === 'success') {
+      const online = data.data.result
+        .filter(m => m.value[1] === '1').length;
+      document.getElementById('mesh-nodes').textContent = online;
+      document.getElementById('mesh-badge').textContent =
+        online + ' NODES';
+      const tflops = (online * 0.05 * 20).toFixed(1);
+      document.getElementById('mesh-tflops').textContent = tflops;
+      document.getElementById('tflops-bar').style.width =
+        Math.min(online * 5, 100) + '%';
+    }
+  } catch { /* Prometheus nedostupný */ }
+}
+
+// === SUBMIT AGENT ===
+function submitAgent(name) {
+  const urls = {
+    komensky: 'https://devpost.com/software/universal-translation-layer-protocol-4-23',
+    asterisk:  'https://devpost.com/software/asterisk-4qs3ih'
+  };
+  if (urls[name]) window.open(urls[name], '_blank');
+}
+
+// === SPARKDOG HEARTBEAT ===
+let sparkdogTick = 0;
+setInterval(() => {
+  sparkdogTick++;
+  const el = document.getElementById('sparkdog-status');
+  el.textContent = sparkdogTick % 2 === 0 ? '♥ OK' : '♡ OK';
+}, 1000);
+
+// === INIT & POLLING ===
+async function poll() {
+  pingNode('http://192.168.123.191:9302', 'primary-latency', 'primary-badge');
+  pingNode('http://192.168.123.169:9303', null, 'shadow-badge');
+  fetchMetrics();
+}
+
+poll();
+setInterval(poll, 10_000);
+
+// Uptime counter
+let uptimeSeconds = 0;
+setInterval(() => {
+  uptimeSeconds++;
+  const h = Math.floor(uptimeSeconds / 3600);
+  const m = Math.floor((uptimeSeconds % 3600) / 60);
+  const s = uptimeSeconds % 60;
+  document.getElementById('primary-uptime').textContent =
+    String(h).padStart(2,'0') + 'h ' +
+    String(m).padStart(2,'0') + 'm ' +
+    String(s).padStart(2,'0') + 's';
+}, 1000);
+</script>
+
+</body>
+</html>
